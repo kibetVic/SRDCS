@@ -1,0 +1,83 @@
+﻿<!-- Views/PasswordReset/ResetSingle.cshtml -->
+@{
+    ViewData["Title"] = "Reset Single Password";
+    Layout = "_AuthLayout";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="text-center mb-0">
+                    <i class="fas fa-user-edit me-2"></i>Reset Single User Password
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="ResetSingle" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-1"></i>Username
+                        </label>
+                        <input type="text" id="username" name="username"
+                               class="form-control" required
+                               placeholder="Enter username to reset" />
+                        <small class="text-muted">Enter the exact username of the user</small>
+                        @* //<span asp-validation-for="Username" class="text-danger"></span> *@
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">
+                            <i class="fas fa-key me-1"></i>New Password
+                        </label>
+                        <input type="text" id="newPassword" name="newPassword"
+                               class="form-control" required
+                               placeholder="Enter new password" />
+                        <small class="text-muted">Minimum 6 characters</small>
+                        @* <span asp-validation-for="newPassword" class="text-danger"></span> *@
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="securityCode" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Security Code
+                        </label>
+                        <input type="password" id="securityCode" name="securityCode"
+                               class="form-control" required
+                               placeholder="Enter security code" />
+                        <small class="text-muted">Security Code: <code>SRDCS2024</code></small>
+                        @* <span asp-validation-for="securityCode" class="text-danger"></span> *@
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Common Users:</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <ul class="mb-0">
+                                    <li><code>admin</code></li>
+                                    <li><code>superadmin</code></li>
+                                    <li><code>sacco_manager</code></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <ul class="mb-0">
+                                    <li><code>accounts_officer</code></li>
+                                    <li><code>data_officer</code></li>
+                                    <li><code>analyst</code></li>
+                                    <li><code>supervisor</code></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Reset Password
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Bulk Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

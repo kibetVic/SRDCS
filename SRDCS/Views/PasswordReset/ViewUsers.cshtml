@@ -1,0 +1,99 @@
+﻿<!-- Views/PasswordReset/ViewUsers.cshtml -->
+@model dynamic
+@{
+    ViewData["Title"] = "All System Users";
+    Layout = "_AuthLayout";
+}
+
+<div class="container-fluid">
+    <div class="card shadow">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+                <i class="fas fa-users me-2"></i>All System Users
+            </h3>
+            <span class="badge bg-light text-dark">@Model.Count users</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>User Type</th>
+                            <th>Status</th>
+                            <th>Hash Type</th>
+                            <th>Hash Length</th>
+                            <th>Hash Preview</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.UserId</td>
+                                <td>
+                                    <strong>@user.Username</strong>
+                                    @if (user.Username == "admin" || user.Username == "superadmin")
+                                    {
+                                        <span class="badge bg-danger ms-2">Admin</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@user.UserType?.Replace("_", " ")</span>
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.HashType == "PBKDF2")
+                                    {
+                                        <span class="badge bg-success">PBKDF2</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">SHA256</span>
+                                    }
+                                </td>
+                                <td>@user.HashLength</td>
+                                <td>
+                                    <small class="text-muted" title="@user.HashPreview...">@user.HashPreview...</small>
+                                </td>
+                                <td>
+                                    <a href="/reset-passwords/single?username=@user.Username"
+                                       class="btn btn-sm btn-outline-primary" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-redo me-2"></i>Password Reset
+                    </a>
+                    <a href="/Account/Login" class="btn btn-outline-primary ms-2">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </a>
+                </div>
+                <div class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    PBKDF2 = Secure, SHA256 = Needs update
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

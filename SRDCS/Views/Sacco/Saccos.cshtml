@@ -1,0 +1,13 @@
+﻿@using Microsoft.JSInterop
+@{
+    ViewData["Title"] = "Saccos Configurations";
+}
+
+<!DOCTYPE html>
+<html>
+<body>
+    <div>
+         @(await Html.RenderComponentAsync<SRDCS.Views.Shared.Components.ManageSACCOs>(RenderMode.ServerPrerendered))
+    </div>
+</body>
+</html>

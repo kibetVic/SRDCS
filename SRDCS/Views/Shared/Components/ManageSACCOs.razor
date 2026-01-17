@@ -1,0 +1,844 @@
+﻿@* Pages/SACCO/ManageSACCOs.razor *@
+@page "/saccos"
+@using SRDCS.Models.Entities
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using SRDCS.Services
+@using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize]
+
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized Context="authContext">
+            <div class="container-fluid">
+                <!-- Header Section -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-building me-2"></i>SACCO Management</h2>
+                        <p class="text-muted mb-0">Manage all SACCO registrations and configurations</p>
+                    </div>
+
+                    <div>
+                        <!-- Welcome message using authContext -->
+                        <span class="text-muted me-3">
+                            <i class="fas fa-user me-1"></i>
+                            Welcome, @authContext.User.Identity?.Name
+                        </span>
+
+                        @if (canCreate)
+                        {
+                            <button class="btn btn-primary me-2" @onclick="ShowAddForm">
+                                <i class="fas fa-plus-circle me-2"></i>Add New SACCO
+                            </button>
+                        }
+                        <button class="btn btn-outline-secondary" @onclick="RefreshData">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error/Success Messages -->
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>@ErrorMessage
+                        <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(SuccessMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>@SuccessMessage
+                        <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
+                    </div>
+                }
+
+                <!-- Main Content Area -->
+                <div class="row">
+                    <!-- Left Column: SACCO List -->
+                    <div class="col-md-7">
+                        <div class="card shadow h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>SACCO List
+                                    <span class="badge bg-primary ms-2">@FilteredSACCOS.Count</span>
+                                </h5>
+                                <div class="input-group" style="width: 250px;">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" placeholder="Search by name, reg number, county..."
+                                           @bind="searchTerm" @bind:event="oninput"
+                                           @oninput="async () => await SearchSACCOS()" />
+                                </div>
+                            </div>
+
+                            <div class="card-body p-0">
+                                @if (IsLoading)
+                                {
+                                    <div class="text-center p-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading SACCOs...</p>
+                                    </div>
+                                }
+                                else if (!FilteredSACCOS.Any())
+                                {
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                                        <h5>No SACCOs found</h5>
+                                        <p class="text-muted">
+                                            @(string.IsNullOrEmpty(searchTerm) ?
+                                                                                    "No SACCOs registered yet" : "No results match your search")
+                                    </p>
+                                    @if (canCreate && string.IsNullOrEmpty(searchTerm))
+                                        {
+                                            <button class="btn btn-primary mt-2" @onclick="ShowAddForm">
+                                                <i class="fas fa-plus me-2"></i>Add First SACCO
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                        <table class="table table-hover mb-0">
+                                            <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                                                <tr class="table-light">
+                                                    <th style="width: 120px;">Reg. No</th>
+                                                    <th>SACCO Name</th>
+                                                    <th style="width: 100px;">Type</th>
+                                                    <th style="width: 100px;">Status</th>
+                                                    <th style="width: 120px;">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var sacco in FilteredSACCOS)
+                                                {
+                                                    <tr @onclick="() => SelectSACCO(sacco)"
+                                                        class="@(SelectedSACCO?.SACCOId == sacco.SACCOId ? "table-active" : "")"
+                                                        style="cursor: pointer;">
+                                                        <td>
+                                                            <strong>@sacco.RegistrationNumber</strong>
+                                                        </td>
+                                                        <td>
+                                                            <div>@sacco.SACCOName</div>
+                                                            <small class="text-muted">@sacco.County</small>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge @GetSACCOTypeBadge(sacco.SACCOType)">
+                                                                @GetSACCOTypeDisplay(sacco.SACCOType)
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge @GetStatusBadge(sacco.Status)">
+                                                                @sacco.Status
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <button class="btn btn-outline-info"
+                                                                        @onclick:stopPropagation="true"
+                                                                        @onclick="() => ViewSACCO(sacco)">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                                @if (canEdit)
+                                                                {
+                                                                    <button class="btn btn-outline-primary"
+                                                                            @onclick:stopPropagation="true"
+                                                                            @onclick="() => EditSACCO(sacco)">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Details/Form -->
+                    <div class="col-md-5">
+                        @if (ShowForm)
+                        {
+                            <!-- Add/Edit Form -->
+                            <div class="card shadow">
+                                <div class="card-header @(IsEditMode ? "bg-warning" : "bg-success") text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas @(IsEditMode ? "fa-edit" : "fa-plus-circle") me-2"></i>
+                                        @(IsEditMode ? "Edit SACCO" : "Add New SACCO")
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <EditForm Model="@CurrentSACCO" OnValidSubmit="@HandleSubmit">
+                                        <DataAnnotationsValidator />
+                                        <ValidationSummary class="alert alert-danger" />
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Registration Number *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.RegistrationNumber"
+                                                               class="form-control" placeholder="SAC001" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.RegistrationNumber)" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">SACCO Name *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.SACCOName"
+                                                               class="form-control" placeholder="Enter SACCO name" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.SACCOName)" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">County *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.County"
+                                                               class="form-control" placeholder="Enter county" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.County)" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Sub-County *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.SubCounty"
+                                                               class="form-control" placeholder="Enter sub-county" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.SubCounty)" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Registration Date *</label>
+                                                    <InputDate @bind-Value="CurrentSACCO.RegistrationDate"
+                                                               class="form-control" max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.RegistrationDate)" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">SACCO Type *</label>
+                                                    <InputSelect @bind-Value="CurrentSACCO.SACCOType" class="form-control">
+                                                        <option value="">Select Type</option>
+                                                        <option value="Deposit_Taking">Deposit Taking</option>
+                                                        <option value="Non_DT">Non-Deposit Taking</option>
+                                                    </InputSelect>
+                                                    <ValidationMessage For="@(() => CurrentSACCO.SACCOType)" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Contact Person *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.ContactPerson"
+                                                               class="form-control" placeholder="Full name" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.ContactPerson)" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Phone *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.Phone"
+                                                               class="form-control" placeholder="0712345678" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.Phone)" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Email</label>
+                                                    <InputText @bind-Value="CurrentSACCO.Email"
+                                                               class="form-control" type="email" placeholder="email@sacco.com" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.Email)" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Address *</label>
+                                                    <InputText @bind-Value="CurrentSACCO.Address"
+                                                               class="form-control" placeholder="Physical address" />
+                                                    <ValidationMessage For="@(() => CurrentSACCO.Address)" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if (IsEditMode)
+                                        {
+                                            <div class="mb-3">
+                                                <label class="form-label">Status</label>
+                                                <InputSelect @bind-Value="CurrentSACCO.Status" class="form-control">
+                                                    <option value="Active">Active</option>
+                                                    <option value="Inactive">Inactive</option>
+                                                </InputSelect>
+                                            </div>
+                                        }
+
+                                        <div class="d-flex justify-content-between mt-4">
+                                            <button type="button" class="btn btn-secondary" @onclick="CancelForm" disabled="@IsSubmitting">
+                                                <i class="fas fa-times me-2"></i>Cancel
+                                            </button>
+                                            <button type="submit" class="btn @(IsEditMode ? "btn-warning" : "btn-success")"
+                                                    disabled="@IsSubmitting">
+                                                @if (IsSubmitting)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                    @(IsEditMode ? "Updating..." : "Creating...")
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas @(IsEditMode ? "fa-save" : "fa-plus") me-2"></i>
+                                                    @(IsEditMode ? "Update SACCO" : "Create SACCO")
+                                                }
+                                            </button>
+                                        </div>
+                                    </EditForm>
+                                </div>
+                            </div>
+                        }
+                        else if (SelectedSACCO != null)
+                        {
+                            <!-- Details View -->
+                            <div class="card shadow h-100">
+                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>SACCO Details
+                                    </h5>
+                                    <div class="btn-group">
+                                        @if (canEdit)
+                                        {
+                                            <button class="btn btn-sm btn-light" @onclick="() => EditSACCO(SelectedSACCO)">
+                                                <i class="fas fa-edit me-1"></i>Edit
+                                            </button>
+                                        }
+                                        @if (canEdit)
+                                        {
+                                            <button class="btn btn-sm @(SelectedSACCO.Status == "Active" ? "btn-warning" : "btn-success")"
+                                                    @onclick="() => ToggleSACCOStatus(SelectedSACCO.SACCOId, SelectedSACCO.Status)">
+                                                <i class="fas @(SelectedSACCO.Status == "Active" ? "fa-toggle-off" : "fa-toggle-on") me-1"></i>
+                                                @(SelectedSACCO.Status == "Active" ? "Deactivate" : "Activate")
+                                            </button>
+                                        }
+                                        @if (canDelete)
+                                        {
+                                            <button class="btn btn-sm btn-danger"
+                                                    @onclick="() => ConfirmDelete(SelectedSACCO.SACCOId, SelectedSACCO.SACCOName)">
+                                                <i class="fas fa-trash me-1"></i>Delete
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-building fa-3x text-primary mb-3"></i>
+                                        <h4>@SelectedSACCO.SACCOName</h4>
+                                        <p class="text-muted">@SelectedSACCO.RegistrationNumber</p>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="border-bottom pb-2">
+                                            <i class="fas fa-info-circle me-2"></i>Basic Information
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <p>
+                                                    <strong>Type:</strong><br>
+                                                    <span class="badge @GetSACCOTypeBadge(SelectedSACCO.SACCOType)">
+                                                        @GetSACCOTypeDisplay(SelectedSACCO.SACCOType)
+                                                    </span>
+                                                </p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p>
+                                                    <strong>Status:</strong><br>
+                                                    <span class="badge @GetStatusBadge(SelectedSACCO.Status)">
+                                                        @SelectedSACCO.Status
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p>
+                                            <strong>Registration Date:</strong><br>
+                                            @SelectedSACCO.RegistrationDate.ToString("yyyy-MM-dd")
+                                        </p>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="border-bottom pb-2">
+                                            <i class="fas fa-map-marker-alt me-2"></i>Location
+                                        </h6>
+                                        <p><strong>County:</strong><br>@SelectedSACCO.County</p>
+                                        <p><strong>Sub-County:</strong><br>@SelectedSACCO.SubCounty</p>
+                                        <p><strong>Address:</strong><br>@SelectedSACCO.Address</p>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="border-bottom pb-2">
+                                            <i class="fas fa-address-card me-2"></i>Contact Details
+                                        </h6>
+                                        <p><strong>Contact Person:</strong><br>@SelectedSACCO.ContactPerson</p>
+                                        <p>
+                                            <strong>Phone:</strong><br>
+                                            <a href="tel:@SelectedSACCO.Phone" class="text-decoration-none">
+                                                <i class="fas fa-phone me-1"></i>@SelectedSACCO.Phone
+                                            </a>
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(SelectedSACCO.Email))
+                                        {
+                                            <p>
+                                                <strong>Email:</strong><br>
+                                                <a href="mailto:@SelectedSACCO.Email" class="text-decoration-none">
+                                                    <i class="fas fa-envelope me-1"></i>@SelectedSACCO.Email
+                                                </a>
+                                            </p>
+                                        }
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Created: @SelectedSACCO.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                                        by @(SelectedSACCO.CreatedBy ?? "System")<br>
+                                        <i class="fas fa-history me-1"></i>
+                                        Last Updated: @SelectedSACCO.DateUpdated.ToString("yyyy-MM-dd HH:mm")
+                                        by @(SelectedSACCO.updateBy ?? "System")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Empty State -->
+                            <div class="card shadow h-100">
+                                <div class="card-body text-center d-flex flex-column justify-content-center">
+                                    <i class="fas fa-building fa-4x text-muted mb-4"></i>
+                                    <h5>No SACCO Selected</h5>
+                                    <p class="text-muted">Select a SACCO from the list to view details</p>
+                                    @if (canCreate)
+                                    {
+                                        <button class="btn btn-primary mt-3" @onclick="ShowAddForm">
+                                            <i class="fas fa-plus me-2"></i>Add New SACCO
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Statistics Footer -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body py-2">
+                                <div class="row text-center">
+                                    <div class="col">
+                                        <h5 class="mb-0">@SACCOS.Count</h5>
+                                        <small class="text-muted">Total SACCOs</small>
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="mb-0">@ActiveSACCOSCount</h5>
+                                        <small class="text-muted">Active</small>
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="mb-0">@DepositTakingCount</h5>
+                                        <small class="text-muted">Deposit Taking</small>
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="mb-0">@NonDTCount</h5>
+                                        <small class="text-muted">Non-DT</small>
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="mb-0">@LatestCounty</h5>
+                                        <small class="text-muted">Top County</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="alert alert-danger m-4">
+                <i class="fas fa-lock me-2"></i>
+                You don't have permission to access SACCO Management.
+                Please contact your system administrator.
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    [Inject]
+    private ISACCOService SACCOService { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    // Data
+    private List<SACCO> SACCOS = new List<SACCO>();
+    private SACCO? SelectedSACCO = null;
+    private SACCO CurrentSACCO = new SACCO();
+
+    // UI State
+    private bool IsLoading = false;
+    private bool ShowForm = false;
+    private bool IsEditMode = false;
+    private bool IsSubmitting = false;
+    private string searchTerm = string.Empty;
+    private string ErrorMessage = string.Empty;
+    private string SuccessMessage = string.Empty;
+
+    // User permissions
+    private bool canCreate = false;
+    private bool canEdit = false;
+    private bool canDelete = false;
+    private ClaimsPrincipal? user;
+    private string userType = string.Empty;
+
+    // Computed Properties
+    private List<SACCO> FilteredSACCOS => SACCOS
+        .Where(s => string.IsNullOrEmpty(searchTerm) ||
+                    (s.RegistrationNumber != null && s.RegistrationNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.SACCOName != null && s.SACCOName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.County != null && s.County.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+        .OrderBy(s => s.SACCOName)
+        .ToList();
+
+    private int ActiveSACCOSCount => SACCOS.Count(s => s.Status == "Active");
+    private int DepositTakingCount => SACCOS.Count(s => s.SACCOType == "Deposit_Taking");
+    private int NonDTCount => SACCOS.Count(s => s.SACCOType == "Non_DT");
+    private string LatestCounty => SACCOS.Where(s => !string.IsNullOrEmpty(s.County))
+                                        .GroupBy(s => s.County)
+                                        .OrderByDescending(g => g.Count())
+                                        .Select(g => g.Key)
+                                        .FirstOrDefault() ?? "N/A";
+
+    // Lifecycle
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUserInfo();
+        await LoadSACCOS();
+    }
+
+    // User Authentication - Updated to use CascadingParameter
+    private async Task GetUserInfo()
+    {
+        if (AuthenticationStateTask != null)
+        {
+            var authState = await AuthenticationStateTask;
+            user = authState?.User;
+
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                userType = user.FindFirst("UserType")?.Value ?? "";
+                var userSACCOId = user.FindFirst("SACCOId")?.Value;
+
+                // Set permissions based on user type
+                canCreate = userType == "System_Admin";
+                canEdit = userType == "System_Admin";
+                canDelete = userType == "System_Admin";
+            }
+        }
+    }
+
+    // Data Methods
+    private async Task LoadSACCOS()
+    {
+        IsLoading = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            if (user != null)
+            {
+                SACCOS = await SACCOService.GetAllSACCOSAsync(user);
+            }
+            else
+            {
+                SACCOS = new List<SACCO>();
+                ErrorMessage = "User authentication required";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading SACCOs: {ex.Message}";
+            Console.WriteLine($"Error in LoadSACCOS: {ex}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SearchSACCOS()
+    {
+        if (user == null) return;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await LoadSACCOS();
+            return;
+        }
+
+        IsLoading = true;
+        try
+        {
+            SACCOS = await SACCOService.SearchSACCOSAsync(searchTerm, user);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error searching SACCOs: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        searchTerm = string.Empty;
+        await LoadSACCOS();
+        SuccessMessage = "Data refreshed successfully!";
+    }
+
+    // Form Methods
+    private void ShowAddForm()
+    {
+        CurrentSACCO = new SACCO
+        {
+            RegistrationDate = DateTime.Now,
+            Status = "Active",
+            SACCOType = "Deposit_Taking"
+        };
+        ShowForm = true;
+        IsEditMode = false;
+        SelectedSACCO = null;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+    }
+
+    private void EditSACCO(SACCO sacco)
+    {
+        CurrentSACCO = new SACCO
+        {
+            SACCOId = sacco.SACCOId,
+            RegistrationNumber = sacco.RegistrationNumber,
+            SACCOName = sacco.SACCOName,
+            County = sacco.County,
+            SubCounty = sacco.SubCounty,
+            RegistrationDate = sacco.RegistrationDate,
+            SACCOType = sacco.SACCOType,
+            ContactPerson = sacco.ContactPerson,
+            Phone = sacco.Phone,
+            Email = sacco.Email,
+            Address = sacco.Address,
+            Status = sacco.Status
+        };
+        ShowForm = true;
+        IsEditMode = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+    }
+
+    private async Task HandleSubmit()
+    {
+        IsSubmitting = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            if (user == null)
+            {
+                ErrorMessage = "User not authenticated";
+                return;
+            }
+
+            if (IsEditMode)
+            {
+                await SACCOService.UpdateSACCOAsync(CurrentSACCO.SACCOId, CurrentSACCO, user);
+                SuccessMessage = "SACCO updated successfully!";
+            }
+            else
+            {
+                await SACCOService.CreateSACCOAsync(CurrentSACCO, user);
+                SuccessMessage = "SACCO created successfully!";
+            }
+
+            await LoadSACCOS();
+            CancelForm();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred: {ex.Message}";
+            Console.WriteLine($"Error in HandleSubmit: {ex}");
+        }
+        finally
+        {
+            IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelForm()
+    {
+        ShowForm = false;
+        SelectedSACCO = null;
+        CurrentSACCO = new SACCO();
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+    }
+
+    // Selection Methods
+    private void SelectSACCO(SACCO sacco)
+    {
+        SelectedSACCO = sacco;
+        ShowForm = false;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+    }
+
+    private void ViewSACCO(SACCO sacco)
+    {
+        SelectedSACCO = sacco;
+        ShowForm = false;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+    }
+
+    // Action Methods
+    private async Task ToggleSACCOStatus(int saccoId, string currentStatus)
+    {
+        var action = currentStatus == "Active" ? "deactivate" : "activate";
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to {action} this SACCO?"))
+            return;
+
+        if (user == null)
+        {
+            ErrorMessage = "User not authenticated";
+            return;
+        }
+
+        try
+        {
+            await SACCOService.ToggleSACCOStatusAsync(saccoId, user);
+            SuccessMessage = $"SACCO {action}d successfully!";
+            await LoadSACCOS();
+
+            // Update selected SACCO if it's the one being toggled
+            if (SelectedSACCO?.SACCOId == saccoId)
+            {
+                SelectedSACCO.Status = currentStatus == "Active" ? "Inactive" : "Active";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task ConfirmDelete(int saccoId, string saccoName)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Are you sure you want to delete \"{saccoName}\"? This action cannot be undone!"))
+            return;
+
+        if (user == null)
+        {
+            ErrorMessage = "User not authenticated";
+            return;
+        }
+
+        try
+        {
+            await SACCOService.DeleteSACCOAsync(saccoId, user);
+            SuccessMessage = $"SACCO \"{saccoName}\" deleted successfully!";
+            await LoadSACCOS();
+
+            if (SelectedSACCO?.SACCOId == saccoId)
+            {
+                SelectedSACCO = null;
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting SACCO: {ex.Message}";
+        }
+    }
+
+    // Helper Methods
+    private string GetSACCOTypeBadge(string? type)
+    {
+        return type switch
+        {
+            "Deposit_Taking" => "bg-success",
+            "Non_DT" => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetSACCOTypeDisplay(string? type)
+    {
+        return type switch
+        {
+            "Deposit_Taking" => "DT",
+            "Non_DT" => "Non-DT",
+            _ => type ?? "Unknown"
+        };
+    }
+
+    private string GetStatusBadge(string status)
+    {
+        return status switch
+        {
+            "Active" => "bg-success",
+            "Inactive" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

@@ -1,0 +1,209 @@
+﻿@using System.Security.Claims
+@* Views/Home/Index.cshtml *@
+
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h3>SACCO Regulatory Data Consolidation System (SRDCS)</h3>
+            <p class="lead">A secure platform for SACCO monthly returns submission and monitoring</p>
+        </div>
+    </div>
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <!-- User Info Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>User Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-user fa-2x text-primary me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Name</h6>
+                                <p class="mb-0">@User.Identity.Name</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-user-tag fa-2x text-success me-3"></i>
+                            <div>
+                                <h6 class="mb-0">User Type</h6>
+                                <p class="mb-0">
+                                    @{
+                                        var userType = User.FindFirst("UserType")?.Value ?? "Not Set";
+                                        var userTypeBadge = userType switch
+                                        {
+                                            "System_Admin" => "badge bg-danger",
+                                            "Analyst" => "badge bg-info",
+                                            "Supervisor" => "badge bg-warning",
+                                            "SACCO_Manager" => "badge bg-primary",
+                                            "Accounts_Officer" => "badge bg-secondary",
+                                            "Data_Entry_Officer" => "badge bg-dark",
+                                            _ => "badge bg-light text-dark"
+                                        };
+                                    }
+                                    <span class="@userTypeBadge">@userType.Replace("_", " ")</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-building fa-2x text-info me-3"></i>
+                            <div>
+                                <h6 class="mb-0">SACCO</h6>
+                                <p class="mb-0">
+                                    @{
+                                        var saccoName = User.FindFirst("SACCOName")?.Value ?? "Not Assigned";
+                                        var saccoId = User.FindFirst("SACCOId")?.Value;
+                                    }
+                                    @if (!string.IsNullOrEmpty(saccoId) && saccoId != "0")
+                                    {
+                                        <span class="badge bg-success">@saccoName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@saccoName</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional User Info -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">User Details</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Username:</dt>
+                            <dd class="col-sm-8">@User.Identity.Name</dd>
+
+                            <dt class="col-sm-4">Email:</dt>
+                            <dd class="col-sm-8">@User.FindFirst(ClaimTypes.Email)?.Value ?? "Not Set"</dd>
+
+                            <dt class="col-sm-4">Role:</dt>
+                            <dd class="col-sm-8">
+                                @{
+                                    var role = User.FindFirst(ClaimTypes.Role)?.Value ?? userType;
+                                }
+                                <span class="badge @userTypeBadge">@role.Replace("_", " ")</span>
+                            </dd>
+
+                            <dt class="col-sm-4">SACCO ID:</dt>
+                            <dd class="col-sm-8">@(saccoId ?? "N/A")</dd>
+
+                            @if (!string.IsNullOrEmpty(saccoId) && saccoId != "0")
+                            {
+                                <dt class="col-sm-4">Registration No:</dt>
+                                <dd class="col-sm-8">@User.FindFirst("RegistrationNumber")?.Value ?? "N/A"</dd>
+                            }
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">Quick Actions</h6>
+                        <div class="row">
+                            @if (userType == "System_Admin" || userType == "Analyst" || userType == "Supervisor")
+                            {
+                                <div class="col-6 mb-3">
+                                    <a href="/saccos" class="btn btn-outline-primary w-100">
+                                        <i class="fas fa-building me-2"></i>SACCOs
+                                    </a>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <a href="/monthly-returns" class="btn btn-outline-success w-100">
+                                        <i class="fas fa-file-invoice-dollar me-2"></i>Returns
+                                    </a>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <a href="/reports" class="btn btn-outline-info w-100">
+                                        <i class="fas fa-chart-bar me-2"></i>Reports
+                                    </a>
+                                </div>
+                                @if (userType == "System_Admin")
+                                {
+                                    <div class="col-6 mb-3">
+                                        <a href="/users" class="btn btn-outline-warning w-100">
+                                            <i class="fas fa-users me-2"></i>Users
+                                        </a>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12 mb-3">
+                                    <a href="/monthly-returns" class="btn btn-primary w-100">
+                                        <i class="fas fa-file-upload me-2"></i>Submit Monthly Return
+                                    </a>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <a href="/my-returns" class="btn btn-outline-success w-100">
+                                        <i class="fas fa-history me-2"></i>My Returns
+                                    </a>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <a href="/profile" class="btn btn-outline-info w-100">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a>
+                                </div>
+                            }
+                            <div class="col-12 mb-3">
+                                <a href="/dashboard" class="btn btn-outline-dark w-100">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Message Based on User Type -->
+        <div class="alert alert-info">
+            <h5 class="alert-heading">
+                <i class="fas @(userType.StartsWith("SACCO") ? "fa-handshake" : "fa-landmark") me-2"></i>
+                Welcome to SRDCS
+            </h5>
+            @if (userType.StartsWith("SACCO") || userType == "Accounts_Officer" || userType == "Data_Entry_Officer")
+            {
+                <p>
+                    You are logged in as <strong>@userType.Replace("_", " ")</strong> for
+                    <strong>@saccoName</strong>.
+                    @if (!string.IsNullOrEmpty(saccoId) && saccoId != "0")
+                    {
+                        <span>You can submit monthly returns, view submission history, and track compliance status.</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger">You are not assigned to any SACCO. Please contact your administrator.</span>
+                    }
+                </p>
+                <hr>
+                <p class="mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Remember to submit your monthly returns before the 10th of each month.
+                </p>
+            }
+            else if (userType == "System_Admin" || userType == "Analyst" || userType == "Supervisor")
+            {
+                <p>
+                    You are logged in as <strong>@userType.Replace("_", " ")</strong> from the Ministry of Co-operatives.
+                    You have access to view all SACCO submissions, approve/reject returns, and generate compliance reports.
+                </p>
+                <hr>
+                <p class="mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Use the navigation menu to access SACCO management, returns review, and reporting features.
+                </p>
+            }
+        </div>
+        }
+</div>

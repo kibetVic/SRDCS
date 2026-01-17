@@ -1,0 +1,212 @@
+﻿@using Radzen.Blazor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SACCO Regulatory System</title>
+
+    <link rel="stylesheet" href="~/AdminLte/dist/css/adminlte.css" />
+    <!-- Radzen CSS - Make sure these come after Bootstrap -->
+    <link rel="stylesheet" href="/blazorcss/material-base.css" />
+    <link rel="stylesheet" href="/blazorcss/standard-base.css" />
+    <link rel="stylesheet" href="/blazorcss/standard.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+    <!-- Font Awesome for icons <link rel="stylesheet" href="~/css/bootstrap-icons.css" asp-append-version="true" />
+
+    @* <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> *@
+    
+    <!-- Bootstrap for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+
+    <!--begin::Fonts-->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@@fontsource/source-sans-3@5.0.12/index.css"
+          integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
+          crossorigin="anonymous"
+          media="print"
+          onload="this.media='all'" />
+    <!--begin::Third Party Plugin(OverlayScrollbars)-->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+          crossorigin="anonymous" />
+    <!--end::Third Party Plugin(OverlayScrollbars)-->
+    <!--begin::Third Party Plugin(Bootstrap Icons)-->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+          crossorigin="anonymous" />
+    <!--end::Third Party Plugin(Bootstrap Icons)-->
+    <!-- apexcharts -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
+          integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0="
+          crossorigin="anonymous" />
+    <!-- jsvectormap -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css"
+          integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4="
+          crossorigin="anonymous" />
+    <base href="~/" />
+    <component type="typeof(RadzenTheme)" render-mode="ServerPrerendered" param-Theme="@("material")" />
+</head>
+<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    <div class="app-wrapper">
+    <!--begin::Header-->
+    <nav class="app-header navbar navbar-expand bg-body">
+        <!--begin::Container-->
+        <div class="container-fluid">
+            <!--begin::Start Navbar Links-->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                        <i class="bi bi-list"></i>
+                    </a>
+                </li>
+                <li class="nav-item d-none d-md-block">
+                    <a asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
+                </li>
+            </ul>
+            <!--end::Start Navbar Links-->
+            <!--begin::End Navbar Links-->
+            <ul class="navbar-nav ms-auto">
+                <!--begin::Navbar Search-->
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="navbar-search" href="#" role="button">
+                        <i class="bi bi-search"></i>
+                    </a>
+                </li>
+                <!--end::Navbar Search-->
+                <!--begin::Notifications Dropdown Menu-->
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-bs-toggle="dropdown" href="#">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="navbar-badge badge text-bg-warning" id="notificationCount">0</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
+                        <span class="dropdown-item dropdown-header" id="notificationHeader">No notifications</span>
+                        <div id="notificationList">
+                            <!-- Notifications will be loaded here -->
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item dropdown-footer" onclick="markAllAsRead()">Mark all as read</a>
+                    </div>
+                </li>
+                <!--end::Notifications Dropdown Menu-->
+                <!--begin::Fullscreen Toggle-->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-lte-toggle="fullscreen">
+                        <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen"></i>
+                        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none"></i>
+                    </a>
+                </li>
+                <!--end::Fullscreen Toggle-->
+                <!--begin::User Menu Dropdown-->
+                <li class="nav-item dropdown user-menu">
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <ul class="navbar-nav ms-auto">
+                                @if (User.Identity.IsAuthenticated)
+                                {
+                                    <li class="nav-item dropdown">
+                                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-user-circle me-1"></i>@User.Identity.Name
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form method="post" asp-controller="Account" asp-action="Login">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                </li>
+                <!--end::User Menu Dropdown-->
+            </ul>
+            <!--end::End Navbar Links-->
+        </div>
+        <!--end::Container-->
+    </nav>
+    <!--begin::Sidebar-->
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <!--begin::Sidebar Wrapper-->
+        <div class="sidebar-wrapper">
+            <nav class="mt-2">
+                <!--begin::Sidebar Menu-->
+                <ul class="nav sidebar-menu flex-column"data-lte-toggle="treeview"
+                    role="navigation"aria-label="Main navigation"
+                    data-accordion="false"id="navigation">
+
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a asp-controller="Home" asp-action="Dashboard" class="nav-link">
+                            <i class="nav-icon bi bi-speedometer2"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-controller="Account" asp-action="Users" class="nav-link">
+                            <i class="nav-icon bi bi-clipboard-check"></i>
+                            <p>Users</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-controller="Sacco" asp-action="Saccos" class="nav-link">
+                            <i class="nav-icon bi bi-wrench-adjustable-circle"></i>
+                            <p>Manage Saccos</p>
+                        </a>
+                    </li>
+                </ul>
+                <!--end::Sidebar Menu-->
+            </nav>
+        </div>
+        <!--end::Sidebar Wrapper-->
+    </aside>
+
+    <main class="app-main">
+        <div class="app-content">
+            <div class="container-fluid">
+                <!-- Quick Stats Row -->
+                @if (IsSectionDefined("QuickStats"))
+                {
+                    @RenderSection("QuickStats", required: false)
+                }
+
+                @RenderBody()
+            </div>
+        </div>
+    </main>
+
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+            crossorigin="anonymous"></script>
+    <!--end::Third Party Plugin(OverlayScrollbars)-->
+    <!--begin::Required Plugin(popperjs for Bootstrap 5)-->
+    <script src="https://cdn.jsdelivr.net/npm/@@popperjs/core@2.11.8/dist/umd/popper.min.js"
+            crossorigin="anonymous"></script>
+    <!--end::Required Plugin(popperjs for Bootstrap 5)-->
+    <!--begin::Required Plugin(Bootstrap 5)-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+            crossorigin="anonymous"></script>
+    <script src="~/AdminLte/dist/js/adminlte.js"></script>
+
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
+            crossorigin="anonymous"></script>
+    <script src="_framework/blazor.server.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

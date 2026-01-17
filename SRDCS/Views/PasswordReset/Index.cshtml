@@ -1,0 +1,85 @@
+﻿<!-- Views/PasswordReset/Index.cshtml -->
+@{
+    ViewData["Title"] = "Password Reset";
+    Layout = "_AuthLayout";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h3 class="text-center mb-0">
+                    <i class="fas fa-key me-2"></i>Password Reset Utility
+                </h3>
+                <p class="text-center mb-0">System Administrator Tool</p>
+            </div>
+            <div class="card-body p-4">
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger">
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Warning</h5>
+                    <p class="mb-2"><strong>This will reset ALL user passwords in the system!</strong></p>
+                    <ul class="mb-0">
+                        <li>All users will get new passwords</li>
+                        <li><code>admin</code> → Password: <code>Admin@123</code></li>
+                        <li>All other users → Password: <code>123456</code></li>
+                        <li>You must notify all users of their new passwords</li>
+                    </ul>
+                </div>
+
+                <form asp-action="ResetAllPasswords" method="post">
+                    <div class="mb-3">
+                        <label for="securityCode" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Security Code
+                        </label>
+                        <input type="password" id="securityCode" name="securityCode"
+                               class="form-control" required
+                               placeholder="Enter security code to continue" />
+                        <small class="text-muted">Security Code: <code>SRDCS2024</code></small>
+                        @* //<span asp-validation-for="securityCode" class="text-danger"></span> *@
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Are you SURE you want to reset ALL passwords? This cannot be undone!')">
+                            <i class="fas fa-sync-alt me-2"></i>Reset ALL Passwords
+                        </button>
+                        <a asp-action="ResetSingle" class="btn btn-outline-primary">
+                            <i class="fas fa-user-edit me-2"></i>Reset Single User Password
+                        </a>
+                        <a href="/Account/Login" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-light">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Use only in case of emergency or initial system setup
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+    .alert ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+    }
+
+        .alert ul li {
+            margin-bottom: 5px;
+        }
+</style>

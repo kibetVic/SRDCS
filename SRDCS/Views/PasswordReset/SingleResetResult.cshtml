@@ -1,0 +1,82 @@
+﻿<!-- Views/PasswordReset/SingleResetResult.cshtml -->
+@{
+    ViewData["Title"] = "Password Reset Complete";
+    Layout = "_AuthLayout";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="text-center mb-0">
+                    <i class="fas fa-check-circle me-2"></i>Password Reset Successful
+                </h3>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-user-check fa-4x text-success mb-3"></i>
+                    <h4>Password has been reset for user:</h4>
+                    <h2 class="text-primary">@ViewBag.Username</h2>
+                </div>
+
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-key me-2"></i>New Credentials</h5>
+                    <div class="d-flex justify-content-center align-items-center gap-3">
+                        <code class="fs-4">@ViewBag.NewPassword</code>
+                        <button class="btn btn-outline-secondary"
+                                onclick="copyToClipboard('@ViewBag.NewPassword')">
+                            <i class="fas fa-copy me-2"></i>Copy
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Old Hash</h6>
+                            </div>
+                            <div class="card-body">
+                                <small class="text-muted">@ViewBag.OldHash</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">New Hash</h6>
+                            </div>
+                            <div class="card-body">
+                                <small class="text-success">@ViewBag.NewHash</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="/Account/Login?username=@ViewBag.Username" class="btn btn-primary me-2">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login as @ViewBag.Username
+                    </a>
+                    <a asp-action="ResetSingle" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-redo me-2"></i>Reset Another
+                    </a>
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-2"></i>Go Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Password copied to clipboard: ' + text);
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+}
