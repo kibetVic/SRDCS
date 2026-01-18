@@ -1,5 +1,4 @@
-﻿// Data/ApplicationDbContext.cs
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SRDCS.Models.Entities;
 using System.Collections.Generic;

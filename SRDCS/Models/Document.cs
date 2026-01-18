@@ -16,15 +16,15 @@ namespace SRDCS.Models.Entities
 
         [Required]
         [StringLength(50)]
-        public string DocumentType { get; set; } // "Audited_Accounts", "Management_Report", etc.
+        public string? DocumentType { get; set; } // "Audited_Accounts", "Management_Report", etc.
 
         [Required]
         [StringLength(255)]
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
 
         [Required]
         [StringLength(500)]
-        public string FilePath { get; set; }
+        public string? FilePath { get; set; }
 
         public int FileSize { get; set; } // in bytes
 
@@ -34,8 +34,8 @@ namespace SRDCS.Models.Entities
         public int UploadedBy { get; set; }
 
         // Navigation properties
-        public virtual MonthlyReturn MonthlyReturn { get; set; }
-        public virtual User UploadedByUser { get; set; }
+        public virtual MonthlyReturn? MonthlyReturn { get; set; }
+        public virtual User? UploadedByUser { get; set; }
     }
 
     // Optional: Enum for Document Types

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SRDCS.Data;
 using SRDCS.Models.Entities;
 using SRDCS.Models.ViewModels;
+using SRDCS.Utility;
 
 namespace SRDCS.Services
 {
@@ -34,6 +35,7 @@ namespace SRDCS.Services
                 return false;
 
             return _passwordHasher.VerifyPassword(user.Password, password);
+            
         }
 
         public async Task<User> GetUserByUsernameAsync(string username)

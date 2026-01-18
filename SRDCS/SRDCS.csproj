@@ -31,4 +31,9 @@
     <PackageReference Include="Radzen.Blazor" Version="8.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Migrations\" />
+    <Folder Include="Views\NewFolder\" />
+  </ItemGroup>
+
 </Project>

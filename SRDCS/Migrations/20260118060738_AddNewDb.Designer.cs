@@ -9,11 +9,11 @@ using SRDCS.Data;
 
 #nullable disable
 
-namespace SRDCS.Data.Migrations
+namespace SRDCS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260117112041_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260118060738_AddNewDb")]
+    partial class AddNewDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

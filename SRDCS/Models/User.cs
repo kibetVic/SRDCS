@@ -24,10 +24,10 @@ namespace SRDCS.Models.Entities
         public DateTime? LastLogin { get; set; }
 
         // Navigation properties
-        public virtual SACCO SACCO { get; set; }
-        public virtual ICollection<MonthlyReturn> MonthlyReturns { get; set; }
-        public virtual ICollection<Document> Documents { get; set; }
-        public virtual ICollection<AuditLog> AuditLogs { get; set; }
+        public virtual SACCO? SACCO { get; set; }
+        public virtual ICollection<MonthlyReturn>? MonthlyReturns { get; set; }
+        public virtual ICollection<Document>? Documents { get; set; }
+        public virtual ICollection<AuditLog>? AuditLogs { get; set; }
 
         // Computed property for full name
         [NotMapped]

@@ -8,6 +8,7 @@ using SRDCS.Data;
 using SRDCS.Models.Entities;
 using SRDCS.Models.ViewModels;
 using SRDCS.Services;
+using SRDCS.Utility;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
@@ -55,8 +56,10 @@ namespace SRDCS.Controllers
             try
             {
                 var user = await _authService.GetUserByUsernameAsync(model.Username);
+                var VerPassword = Decryptor.Decript_String(model.Password!);
+                if (!user.Password!.Equals(VerPassword))
 
-                if (user == null || !await _authService.AuthenticateAsync(model.Username, model.Password))
+                   
                 {
                     ModelState.AddModelError(string.Empty, "Invalid username or password.");
                     return View(model);

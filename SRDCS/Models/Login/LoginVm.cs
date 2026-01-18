@@ -5,8 +5,8 @@ namespace SRDCS.Models.ViewModels
 {
     public class LoginVm
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string? Username { get; set; }
+        public string? Password { get; set; }
 
         [Display(Name = "Remember me")]
         public bool RememberMe { get; set; }
